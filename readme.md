@@ -1,6 +1,6 @@
 # Navix
 
-A Next.js App Router inspired file-based routing system for Python web applications.
+A Next.js App Router inspired file-based routing system for Python web applications built on nexios .
 
 ## Features
 

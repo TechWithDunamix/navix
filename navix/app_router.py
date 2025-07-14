@@ -48,8 +48,8 @@ class NavixRouter:
         self.components_dir = Path(components_dir)
         
         # Create directories if they don't exist
-        self.app_dir.mkdir(exist_ok=True)
-        self.components_dir.mkdir(exist_ok=True)
+        # self.app_dir.mkdir(exist_ok=True)
+        # self.components_dir.mkdir(exist_ok=True)
         
         # Initialize handlers
         self.route_handler = RouteHandler(str(self.app_dir), template_env)
