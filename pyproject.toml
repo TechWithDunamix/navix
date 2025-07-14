@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "navix"
+version = "0.1.0"
+description = "Navix is the official file-based routing system for the Nexios framework. It auto-generates application routes by mapping your file structure to URL paths — giving you a zero-config, convention-over-configuration approach to building fast APIs."
+authors = [
+    {name = "Chidebele Dunamis", email = "techwithdunamix@gmail.com"}
+]
+license = "BSD-3-Clause"
+homepage = "https://github.com/nexios-labs/nexios"
+repository = "https://github.com/nexios-labs/nexios"
+documentation = "https://nexios-docs.netlify.app/"
+readme = "readme.md"
+keywords = [
+    "ASGI",
+    "backend",
+    "framework",
+    "web",
+    "Python",
+    "async",
+    "asynchronous",
+    "uvicorn",
+    "granian",
+    "web server",
+    "API",
+    "scalable",
+    "real-time",
+    "concurrent",
+    "HTTP",
+    "websocket",
+    "Nexios"
+]
+requires-python = ">=3.9"
+dependencies = [
+  "nexios",
+  "jinja2"
+]
+
+
+
+
