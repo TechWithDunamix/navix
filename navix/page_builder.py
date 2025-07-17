@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional, List
 from nexios.http import Request, Response
 from nexios.logging import create_logger
 import re
+import inspect
+from nexios.dependencies import inject_dependencies
 
 logger = create_logger("nexios.page_builder")
 
@@ -106,58 +108,55 @@ class PageBuilder:
                 
         return loading_handlers
     
-    def build_page(
+    async def build_page(
         self,
         route_path: str,
         request: Request,
         props: Optional[Dict[str, Any]] = None
     ) -> str:
         """Build a complete page with all layouts and content."""
-        try:
             # Find the page template
-            page_path = self._find_page_template(route_path)
-            if not page_path:
-                raise FileNotFoundError(f"No page template found for route: {route_path}")
+        page_path = self._find_page_template(route_path)
+        if not page_path:
+            raise FileNotFoundError(f"No page template found for route: {route_path}")
+        
+        # Get page props (now async)
+        page_props = await self._get_page_props(route_path, request)
+        if page_props:
+            props = {**(props or {}), **page_props}
+        
+        # Render the page content
+        page_content = self.route_handler.render_page(page_path, request, props)
+        
+        # Apply layouts
+        layouts = self.find_layouts(route_path)
+        final_content = page_content
+        
+        # Apply layouts from innermost to outermost
+        for layout_path in reversed(layouts):
+            try:
+                template_path = str(layout_path.relative_to(self.route_handler.app_dir)).replace("\\", "/")
+                layout_template = self.route_handler.template_env.get_template(template_path)
+                
+                # Merge props with request context
+                context = {
+                    "request": request,
+                    "params": getattr(request, "path_params", {}),
+                    "query": getattr(request, "query_params", {}),
+                    "children": final_content,
+                    **(props or {})
+                }
+                
+                final_content = layout_template.render(**context)
+                
+            except Exception as e:
+                logger.error(f"Failed to apply layout {layout_path}: {e}")
+                # Continue without this layout
+                continue
+        
+        return final_content
             
-            # Get page props
-            page_props = self._get_page_props(route_path, request)
-            if page_props:
-                props = {**(props or {}), **page_props}
-            
-            # Render the page content
-            page_content = self.route_handler.render_page(page_path, request, props)
-            
-            # Apply layouts
-            layouts = self.find_layouts(route_path)
-            final_content = page_content
-            
-            # Apply layouts from innermost to outermost
-            for layout_path in reversed(layouts):
-                try:
-                    template_path = str(layout_path.relative_to(self.route_handler.app_dir)).replace("\\", "/")
-                    layout_template = self.route_handler.template_env.get_template(template_path)
-                    
-                    # Merge props with request context
-                    context = {
-                        "request": request,
-                        "params": getattr(request, "path_params", {}),
-                        "query": getattr(request, "query_params", {}),
-                        "children": final_content,
-                        **(props or {})
-                    }
-                    
-                    final_content = layout_template.render(**context)
-                    
-                except Exception as e:
-                    logger.error(f"Failed to apply layout {layout_path}: {e}")
-                    # Continue without this layout
-                    continue
-            
-            return final_content
-            
-        except Exception as e:
-            logger.error(f"Failed to build page for route {route_path}: {e}")
-            return self._render_error_page(route_path, request, e)
+        
     
     def _route_to_filesystem(self, route_path: str) -> str:
         """Convert route path with {slug} to filesystem path with [slug] and catch-all."""
@@ -179,8 +178,9 @@ class PageBuilder:
         
         return page_path if page_path.exists() else None
     
-    def _get_page_props(self, route_path: str, request: Request) -> Optional[Dict[str, Any]]:
-        """Get props for a page."""
+    async def _get_page_props(self, route_path: str, request: Request) -> Optional[Dict[str, Any]]:
+        """Get props for a page, using Nexios DI system."""
+        from .exceptions import NavixPagePropException
         if route_path == "/":
             props_path = self.route_handler.app_dir / "page.py"
         else:
@@ -191,9 +191,17 @@ class PageBuilder:
             props_func = self.route_handler.load_page_props(props_path)
             if props_func:
                 try:
-                    return props_func(request)
+                    injected = inject_dependencies(props_func)
+                    result = injected(request)
+                    if inspect.isawaitable(result):
+                        return await result
+                    return result
                 except Exception as e:
-                    logger.error(f"Failed to get page props: {e}")
+                    raise e from NavixPagePropException(
+                        message="Exception in page prop function.",
+                        route_path=route_path,
+                        original_exception=e
+                    ) 
         
         return None
     

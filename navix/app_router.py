@@ -80,7 +80,6 @@ class NavixRouter:
             if route_path:
                 self._register_api_route(route_path, route_file)
         
-        logger.info(f"Registered {len(self._routes_cache)} routes")
     
     def _get_route_path_from_file(self, file_path: Path) -> Optional[str]:
         """Convert file path to route path."""
@@ -118,16 +117,10 @@ class NavixRouter:
         logger.debug(f"Registering page route: {route_path} -> {page_file}")
         
         async def page_handler(request, response):
-            try:
-                # Build the page
-                content = self.page_builder.build_page(route_path, request)
-                return response.html(content)
-            except Exception as e:
-                logger.error(f"Error rendering page {route_path}: {e}")
-                # Try to render error page
-                error_content = self.page_builder._render_error_page(route_path, request, e)
-                return response.html(error_content, status_code=500)
-        
+           
+            content = await self.page_builder.build_page(route_path, request)
+            return response.html(content)
+           
         # Register the rout
         self.app.add_route(
             Routes(
@@ -150,23 +143,19 @@ class NavixRouter:
     
     def _register_api_route(self, route_path: str, route_file: Path):
         """Register an API route."""
-        logger.debug(f"Registering API route: {route_path} -> {route_file}")
         
         # Load API handlers
         handlers = self.route_handler.load_api_route(route_file)
         if not handlers:
-            logger.warning(f"No handlers found in API route: {route_file}")
             return
         
         # Register each HTTP method
         for method, handler in handlers.items():
             async def api_handler(request, response, method=method, handler=handler):
-                try:
-                    result = await handler(request, response)
-                    return result
-                except Exception as e:
-                    logger.error(f"Error in API route {route_path} ({method}): {e}")
-                    return response.json({"error": str(e)}, status_code=500)
+                
+                result = await handler(request, response)
+                return result
+                
             
             # Register the route
             self.app.add_route(
