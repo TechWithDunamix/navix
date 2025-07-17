@@ -41,16 +41,18 @@ class NavixRouter:
         app: NexiosApp,
         app_dir: str = "app",
         components_dir: str = "components",
-        template_env: Optional[Any] = None
+        template_env: Optional[Any] = None,
+        force_create_folder: bool = False
     ):
         self.app = app
         self.app_dir = Path(app_dir)
         self.components_dir = Path(components_dir)
         
         # Create directories if they don't exist
-        # self.app_dir.mkdir(exist_ok=True)
-        # self.components_dir.mkdir(exist_ok=True)
-        
+       
+        if force_create_folder:
+            self.app_dir.mkdir(parents=True, exist_ok=True)
+            self.components_dir.mkdir(parents=True, exist_ok=True)
         # Initialize handlers
         self.route_handler = RouteHandler(str(self.app_dir), template_env)
         self.page_builder = PageBuilder(self.route_handler)
@@ -59,6 +61,7 @@ class NavixRouter:
         self._routes_cache: Dict[str, Any] = {}
         
         # Register routes
+        self.config = self.app.config
         self._register_routes()
     
     def _register_routes(self):
@@ -125,7 +128,7 @@ class NavixRouter:
                 error_content = self.page_builder._render_error_page(route_path, request, e)
                 return response.html(error_content, status_code=500)
         
-        # Register the route
+        # Register the rout
         self.app.add_route(
             Routes(
                 path=route_path,
@@ -133,7 +136,9 @@ class NavixRouter:
                 methods=["GET"],
                 name=f"page_{route_path.replace('/', '_').strip('_')}",
                 summary=f"Page route for {route_path}",
-                description=f"Renders the page at {route_path}"
+                description=f"Renders the page at {route_path}",
+                exclude_from_schema=self.config.exlude_page_from_schem or True
+
             )
         )
         
