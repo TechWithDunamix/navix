@@ -205,33 +205,7 @@ class PageBuilder:
         
         return None
     
-    def _render_error_page(self, route_path: str, request: Request, error: Exception) -> str:
-        """Render an error page."""
-        error_handlers = self.find_error_handlers(route_path)
-        
-        for error_path in error_handlers:
-            try:
-                error_handler = self.route_handler.load_error_handler(error_path)
-                if error_handler:
-                    return error_handler(request, error)
-            except Exception as e:
-                logger.error(f"Failed to use error handler {error_path}: {e}")
-                continue
-        
-        # Fallback error page
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Error</title>
-        </head>
-        <body>
-            <h1>Something went wrong</h1>
-            <p>An error occurred while processing your request.</p>
-            <p>Error: {str(error)}</p>
-        </body>
-        </html>
-        """
+   
     
     def render_loading_page(self, route_path: str, request: Request) -> str:
         """Render a loading page."""
