@@ -1,16 +1,39 @@
 # Navix
 
-A Next.js App Router inspired file-based routing system for Python web applications built on nexios .
+Navix is a static site generator for Python, designed to make building simple, content-driven websites effortless and SEO-optimized by default. It is ideal for blogs, documentation, portfolios, and landing pages—sites that don’t need dynamic forms or client-side loading.
 
-## Features
+---
 
-- **File-based Routing**: Organize routes using the familiar `app/` directory structure
-- **Server-Side Rendering**: Render pages with Jinja2 templates
-- **Component System**: Build reusable components with pure Python functions
-- **Layout System**: Create nested layouts for consistent page structure
-- **API Routes**: Create API endpoints alongside your pages
-- **Dynamic Routing**: Support for dynamic segments and catch-all routes
-- **Error Handling**: Built-in error boundaries and loading states
+## Key Features
+
+- **Static HTML Output:**
+  - All pages are generated as static HTML for maximum speed and SEO.
+- **Automatic SEO:**
+  - Title, description, canonical tags
+  - Open Graph and Twitter Card meta
+  - Sitemap.xml and robots.txt
+  - Schema.org structured data
+- **Layouts:**
+  - Define reusable layouts (e.g., `layout.html`) for consistent site structure.
+- **Markdown & HTML Content:**
+  - Write content in Markdown or HTML. Navix handles conversion, linking, and SEO enhancements.
+- **Component System:**
+  - Build reusable static components with Python functions for use in templates.
+- **Asset Handling:**
+  - Simple static asset pipeline for CSS, JS, and images.
+- **No Dynamic Features:**
+  - No forms, loaders, or client-side routing. All navigation is standard HTML links.
+
+---
+
+## What Navix Is Not
+
+- Not a React/SPA framework
+- Not for building dashboards or apps
+- Not for dynamic, user-interactive sites
+- No server-side runtime or API endpoints
+
+---
 
 ## Installation
 
@@ -18,144 +41,92 @@ A Next.js App Router inspired file-based routing system for Python web applicati
 pip install navix
 ```
 
+---
+
 ## Quick Start
 
-```python
-from navix import create_app
-
-app = create_app(
-    app_dir="app",
-    components_dir="components",
-    static_dir="static"
-)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
-```
-
-## Project Structure
+1. **Create your project structure:**
 
 ```
 myproject/
-├── app/                          # App directory (routes)
-│   ├── layout.html              # Root layout
-│   ├── page.html                # Home page
-│   ├── page.py                  # Home page props
-│   ├── about/
-│   │   └── page.html            # About page
-│   ├── blog/
-│   │   ├── page.html            # Blog listing
-│   │   ├── page.py              # Blog props
-│   │   └── [slug]/              # Dynamic blog posts
-│   │       ├── page.html
-│   │       └── page.py
-│   └── api/
-│       └── status/
-│           └── route.py         # API route
-├── components/                   # Reusable components
-│   ├── Button.py
-│   └── Card.py
-├── static/                       # Static files
-└── main.py                       # Application entry point
+├── app/                # Your pages (Markdown or HTML)
+│   ├── layout.html     # Root layout
+│   ├── index.md        # Home page (Markdown)
+│   ├── about.md        # About page
+│   └── blog/
+│       ├── index.md    # Blog listing
+│       └── hello.md    # Blog post
+├── components/         # Reusable static components (Python)
+│   └── Button.py
+├── static/             # Static files (CSS, JS, images)
+└── main.py             # (Optional) For local preview
 ```
 
-## Usage Examples
+2. **Write content in Markdown or HTML:**
 
-### File-based Routing
+```markdown
+# Welcome to My Site
+This is my homepage, built with Navix!
+```
 
-Create routes by adding files to the `app/` directory:
-
-- `app/page.html` → `/` (home page)
-- `app/about/page.html` → `/about`
-- `app/blog/page.html` → `/blog`
-- `app/blog/[slug]/page.html` → `/blog/hello-world` (dynamic route)
-
-### Page Templates
-
-Create HTML templates with Jinja2 syntax:
+3. **Define a layout:**
 
 ```html
-<!-- app/page.html -->
-<div class="home-page">
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
-    
-    {% for feature in features %}
-    <div class="feature">
-        <h3>{{ feature.title }}</h3>
-        <p>{{ feature.description }}</p>
-    </div>
-    {% endfor %}
-</div>
+<!-- app/layout.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <meta name="description" content="{{ description }}">
+    <!-- SEO meta tags auto-generated -->
+</head>
+<body>
+    <header><h1>{{ site_name }}</h1></header>
+    <main>{{ children }}</main>
+    <footer>&copy; 2024 My Site</footer>
+</body>
+</html>
 ```
 
-### Page Props
+4. **Build your static site:**
 
-Provide data to your pages using Python functions:
-
-```python
-# app/page.py
-from navix.http import Request
-from typing import Dict, Any
-
-def props(request: Request) -> Dict[str, Any]:
-    return {
-        "title": "Welcome",
-        "description": "Hello from Navix",
-        "features": [
-            {"title": "Fast", "description": "Lightning fast performance"},
-            {"title": "Simple", "description": "Easy to use and understand"}
-        ]
-    }
+```bash
+navix build
 ```
 
-### Components
+All your pages will be generated as static HTML in the `output/` directory, complete with SEO enhancements.
 
-Create reusable components with pure Python functions:
+---
 
-```python
-# components/Button.py
-from navix import component
+## Usage
 
-@component
-def Button(text="Click me", variant="default", **attrs):
-    variant_classes = {
-        "default": "btn",
-        "primary": "btn btn-primary",
-        "secondary": "btn btn-secondary"
-    }
-    
-    classes = variant_classes.get(variant, variant_classes["default"])
-    attrs_str = " ".join([f'{k}="{v}"' for k, v in attrs.items()])
-    
-    return f'<button class="{classes}" {attrs_str}>{text}</button>'
-```
+- Place Markdown (`.md`) or HTML (`.html`) files in the `app/` directory.
+- Use layouts for consistent structure.
+- Use Python components for static HTML snippets.
+- Run `navix build` to generate your site.
 
-Use components in your templates:
+---
 
-```html
-{{ component('Button', text='Hello World', variant='primary') }}
-```
+## SEO by Default
 
-### API Routes
+Navix automatically generates:
+- Meta tags (title, description, canonical)
+- Open Graph and Twitter Card tags
+- Sitemap.xml and robots.txt
+- Structured data (Schema.org)
 
-Create API endpoints alongside your pages:
+---
 
-```python
-# app/api/status/route.py
-from navix.http import Request, Response
+## Example Use Cases
 
-async def get(request: Request, response: Response) -> Response:
-    return response.json({
-        "status": "healthy",
-        "timestamp": "2024-01-01T00:00:00Z"
-    })
+- Personal blogs
+- Documentation sites
+- Marketing/landing pages
+- Portfolio sites
 
-async def post(request: Request, response: Response) -> Response:
-    data = await request.json()
-    return response.json({"received": data})
-```
+---
 
 ## License
 
